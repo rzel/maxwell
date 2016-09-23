@@ -10,7 +10,7 @@ enum Status { Ok };
 // Publish
 ////////////////////////////////////////////////////////////////////////////////
 
-[ServiceName="intelligence.ContextService"]
+[ServiceName="intelligence.ContextPublisher"]
 interface ContextPublisher {
   StartPublishing(string whoami, PublisherPipe& pipe);
 };
@@ -23,7 +23,7 @@ interface PublisherPipe {
 // Subscribe
 ////////////////////////////////////////////////////////////////////////////////
 
-[ServiceName="intelligence.ContextService"]
+[ServiceName="intelligence.ContextSubscriber"]
 interface ContextSubscriber {
   Subscribe(array<string> labels, ContextListener listener);
   // TODO(thatguy) => (Subscription subcription);

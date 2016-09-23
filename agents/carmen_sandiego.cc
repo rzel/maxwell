@@ -15,9 +15,11 @@ namespace {
 using mojo::ApplicationImplBase;
 using mojo::Binding;
 using mojo::InterfaceHandle;
+using mojo::InterfaceRequest;
 using mojo::RunLoop;
 
 using intelligence::ContextListener;
+using intelligence::ContextListenerPtr;
 using intelligence::ContextPublisherPtr;
 using intelligence::ContextSubscriberPtr;
 using intelligence::ContextUpdatePtr;
@@ -39,13 +41,13 @@ class CarmenSandiego : public ApplicationImplBase, public ContextListener {
     // all be refinements on "location"
     cxout->StartPublishing("agents/carmen_sandiego", GetProxy(&loc_out_));
 
+    ContextListenerPtr listener_ptr;
+    listener_.Bind(GetProxy(&listener_ptr).Pass());
     // TODO(rosswang): If we want to keep the label-array form of Subscribe as
     // canonical, we should probably work on supporting Mojo Array literals.
     mojo::Array<mojo::String> labels;
     labels.push_back("GPS location");
-    InterfaceHandle<ContextListener> h_listener;
-    listener_.Bind(&h_listener);
-    cxin->Subscribe(labels.Pass(), h_listener.Pass());
+    cxin->Subscribe(labels.Pass(), listener_ptr.PassInterfaceHandle());
   }
 
   void OnUpdate(mojo::Map<mojo::String, ContextUpdatePtr> update,

@@ -4,13 +4,13 @@
 
 group("all") {
   deps = [
-    ":agents/location",
+    ":agents/carmen_sandiego",
   ]
 }
 
-executable("agents/location") {
+executable("agents/carmen_sandiego") {
   sources = [
-    "location.cc",
+    "carmen_sandiego.cc",
   ]
 
   deps = [

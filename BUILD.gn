@@ -5,6 +5,7 @@
 group("maxwell") {
   deps = [
     "acquirers:all",
+    "agents:all",
     "context_service:all",
     ":maxwell_test",
   ]

@@ -35,12 +35,12 @@ class PublisherPipeImpl : public PublisherPipe {
       : strong_binding_(this, handle.Pass()), whoami_(whoami) {}
 
   ~PublisherPipeImpl() {
-    MOJO_LOG(INFO) << "context_service publisher " << whoami_ << " terminated";
+    MOJO_LOG(INFO) << "publisher " << whoami_ << " terminated";
   }
 
   void Publish(const mojo::String& label, const mojo::String& value,
                const PublishCallback& callback) override {
-    MOJO_LOG(INFO) << "context_service publisher " << whoami_ << " set value "
+    MOJO_LOG(INFO) << "publisher " << whoami_ << " set value "
                    << label << ": " << value;
     callback.Run(Status::Ok);
   }
@@ -62,7 +62,7 @@ class ContextServiceImpl : public ContextPublisher, public ContextSubscriber {
 
   void StartPublishing(const mojo::String& whoami,
                        InterfaceRequest<PublisherPipe> pipe) override {
-    MOJO_LOG(INFO) << "context_service StartPublishing " << whoami;
+    MOJO_LOG(INFO) << "StartPublishing " << whoami;
 
     new PublisherPipeImpl(whoami, pipe.Pass());
   }
@@ -71,6 +71,8 @@ class ContextServiceImpl : public ContextPublisher, public ContextSubscriber {
   // on-backpressure-buffer, which is the default for Mojo.
   void Subscribe(mojo::Array<mojo::String> labels,
                  InterfaceHandle<ContextListener> listener_handle) override {
+    MOJO_LOG(INFO) << "Subscribe to " << labels.data();
+
     // TODO(rosswang): interface ptr lifecycle management (remove on error)
     ContextListenerPtr* listener = new ContextListenerPtr(
       ContextListenerPtr::Create(listener_handle.Pass()));
@@ -82,7 +84,7 @@ class ContextServiceImpl : public ContextPublisher, public ContextSubscriber {
       initial_snapshot[label] = entry->latest.Clone();
     }
 
-    (*listener->OnUpdate(initial_snapshot.Pass(), [](Status){});
+    (*listener)->OnUpdate(initial_snapshot.Pass(), [](Status){});
   }
 
  private:

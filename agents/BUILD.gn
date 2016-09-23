@@ -1,0 +1,22 @@
+# Copyright 2016 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+group("all") {
+  deps = [
+    ":agents/location",
+  ]
+}
+
+executable("agents/location") {
+  sources = [
+    "location.cc",
+  ]
+
+  deps = [
+    "//apps/maxwell/context_service:interfaces",
+    "//mojo/public/cpp/application:standalone",
+    "//mojo/public/cpp/utility:utility",
+    "//mojo/system",
+  ]
+}

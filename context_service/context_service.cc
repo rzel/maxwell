@@ -15,10 +15,16 @@ namespace {
 
 using mojo::ApplicationImplBase;
 using mojo::BindingSet;
+using mojo::InterfaceHandle;
 using mojo::InterfaceRequest;
 using mojo::ServiceProviderImpl;
 
+using intelligence::ContextListener;
+using intelligence::ContextListenerPtr;
 using intelligence::ContextPublisher;
+using intelligence::ContextSubscriber;
+using intelligence::ContextUpdate;
+using intelligence::ContextUpdatePtr;
 using intelligence::PublisherPipe;
 using intelligence::Status;
 
@@ -45,7 +51,12 @@ class PublisherPipeImpl : public PublisherPipe {
   MOJO_DISALLOW_COPY_AND_ASSIGN(PublisherPipeImpl);
 };
 
-class ContextServiceImpl : public ContextPublisher {
+struct ContextEntry {
+  ContextUpdate latest;
+  std::vector<ContextListenerPtr*> listeners;
+};
+
+class ContextServiceImpl : public ContextPublisher, public ContextSubscriber {
  public:
   ContextServiceImpl() {}
 
@@ -56,7 +67,26 @@ class ContextServiceImpl : public ContextPublisher {
     new PublisherPipeImpl(whoami, pipe.Pass());
   }
 
+  // TODO(rosswang): additional backpressure modes. For now, just do
+  // on-backpressure-buffer, which is the default for Mojo.
+  void Subscribe(mojo::Array<mojo::String> labels,
+                 InterfaceHandle<ContextListener> listener_handle) override {
+    // TODO(rosswang): interface ptr lifecycle management (remove on error)
+    ContextListenerPtr* listener = new ContextListenerPtr(
+      ContextListenerPtr::Create(listener_handle.Pass()));
+    mojo::Map<mojo::String, ContextUpdatePtr> initial_snapshot;
+
+    for (mojo::String label : labels) {
+      ContextEntry* entry = &repo[label];
+      entry->listeners.push_back(listener);
+      initial_snapshot[label] = entry->latest.Clone();
+    }
+
+    (*listener->OnUpdate(initial_snapshot.Pass(), [](Status){});
+  }
+
  private:
+  std::map<std::string, ContextEntry> repo;
   MOJO_DISALLOW_COPY_AND_ASSIGN(ContextServiceImpl);
 };
 

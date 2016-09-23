@@ -34,12 +34,12 @@ class CarmenSandiego : public ApplicationImplBase, public ContextListener {
     ContextSubscriberPtr cxin;
     ContextPublisherPtr cxout;
     ConnectToService(shell(), "mojo:context_service", GetProxy(&cxin));
-    ConnectToService(shell(), "mojo:context_service", GetProxy(&cxout));
+    //ConnectToService(shell(), "mojo:context_service", GetProxy(&cxout));
 
     // TODO(rosswang): V0 does not support semantic differentiation by source,
     // so the labels have to be explicitly different. In the future, these could
     // all be refinements on "location"
-    cxout->StartPublishing("agents/carmen_sandiego", GetProxy(&loc_out_));
+    //cxout->StartPublishing("agents/carmen_sandiego", GetProxy(&loc_out_));
 
     ContextListenerPtr listener_ptr;
     listener_.Bind(GetProxy(&listener_ptr).Pass());

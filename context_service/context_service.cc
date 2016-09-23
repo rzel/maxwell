@@ -71,7 +71,7 @@ class ContextServiceImpl : public ContextPublisher, public ContextSubscriber {
   // on-backpressure-buffer, which is the default for Mojo.
   void Subscribe(mojo::Array<mojo::String> labels,
                  InterfaceHandle<ContextListener> listener_handle) override {
-    MOJO_LOG(INFO) << "Subscribe to " << labels.data();
+    MOJO_LOG(INFO) << "Subscribe to something";
 
     // TODO(rosswang): interface ptr lifecycle management (remove on error)
     ContextListenerPtr* listener = new ContextListenerPtr(
@@ -102,14 +102,22 @@ class ContextServiceApp : public ApplicationImplBase {
                mojo::InterfaceRequest<ContextPublisher> request) {
           // All channels will connect to this singleton object, so just
           // add the binding to our collection.
-          bindings_.AddBinding(&cxs_impl_, request.Pass());
+          pub_bindings_.AddBinding(&cxs_impl_, request.Pass());
+        });
+    service_provider_impl->AddService<ContextSubscriber>(
+        [this](const mojo::ConnectionContext& connection_context,
+               mojo::InterfaceRequest<ContextSubscriber> request) {
+          // All channels will connect to this singleton object, so just
+          // add the binding to our collection.
+          sub_bindings_.AddBinding(&cxs_impl_, request.Pass());
         });
     return true;
   }
 
  private:
   ContextServiceImpl cxs_impl_;
-  mojo::BindingSet<ContextPublisher> bindings_;
+  mojo::BindingSet<ContextPublisher> pub_bindings_;
+  mojo::BindingSet<ContextSubscriber> sub_bindings_;
   MOJO_DISALLOW_COPY_AND_ASSIGN(ContextServiceApp);
 };
 

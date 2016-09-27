@@ -4,25 +4,49 @@
 
 #include <mojo/system/main.h>
 
+#include "apps/maxwell/context_service/context_service.mojom.h"
 #include "mojo/public/cpp/application/application_impl_base.h"
+#include "mojo/public/cpp/application/connect.h"
 #include "mojo/public/cpp/application/run_application.h"
 
 namespace {
 
+using namespace intelligence;
+
 using mojo::ApplicationImplBase;
+using mojo::Binding;
 using mojo::InterfaceHandle;
 using mojo::ServiceProvider;
 
-class MaxwellTestApp : public ApplicationImplBase {
+class MaxwellTestApp : public ApplicationImplBase,
+                       public ContextSubscriberLink {
  public:
+  MaxwellTestApp(): sink_(this) {}
+
   void OnInitialize() override {
     shell()->ConnectToApplication("mojo:acquirers/gps", GetProxy(&gps_));
     shell()->ConnectToApplication("mojo:agents/carmen_sandiego",
                                   GetProxy(&carmen_sandiego_));
+
+    ContextServicePtr cx;
+    ConnectToService(shell(), "mojo:context_service", GetProxy(&cx));
+    SuggestionAgentClientPtr cc;
+    cx->RegisterSuggestionAgent("test", GetProxy(&cc));
+    ContextSubscriberLinkPtr sink_ptr;
+    sink_.Bind(GetProxy(&sink_ptr));
+    cc->Subscribe("/location/region", "json:string",
+                  sink_ptr.PassInterfaceHandle());
+  }
+
+  void OnUpdate(ContextUpdatePtr update) override {
+    MOJO_LOG(INFO) << "OnUpdate from "
+                   << update->source << ": "
+                   << update->json_value;
   }
 
  private:
   InterfaceHandle<ServiceProvider> gps_, carmen_sandiego_;
+  Binding<ContextSubscriberLink> sink_;
 };
 
 } // namespace

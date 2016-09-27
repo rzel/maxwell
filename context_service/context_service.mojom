@@ -4,35 +4,73 @@
 
 module intelligence;
 
+[ServiceName="intelligence.ContextService"]
+interface ContextService {
+  RegisterAcquirer(string whoami, ContextAcquirerClient& client);
+  RegisterContextAgent(string whoami, ContextAgentClient& client);
+  RegisterSuggestionAgent(string whoami, SuggestionAgentClient& client);
+};
+
+// A client bound for a specific context acquirer. All context written by this
+// client is attributed to the bound acquirer.
+interface ContextAcquirerClient {
+  // Registers a potential context publisher. When potential subscribers exist,
+  // the publisher is woken through the provided ContextPublisherController.
+  RegisterPublisher(string label, string schema,
+                    ContextPublisherController controller);
+};
+
+// A client bound for a specific context agent. All context read or written by
+// this client is attributed to the bound agent.
+interface ContextAgentClient {
+  // Registers a potential context publisher. When potential subscribers exist,
+  // the publisher is woken through the provided ContextPublisherController.
+  RegisterPublisher(string label, string schema,
+                    ContextPublisherController controller);
+
+  // Registers a listener to a context label.
+  Subscribe(string label, string schema, ContextSubscriberLink link);
+  // TODO(thatguy) => (Subscription subcription);
+};
+
+// A client bound for a specific suggestion agent. All context read by this
+// client is attributed to the bound agent.
+interface SuggestionAgentClient {
+  // Registers a listener to a context label.
+  Subscribe(string label, string schema, ContextSubscriberLink link);
+  // TODO(thatguy) => (Subscription subcription);
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Publish
 ////////////////////////////////////////////////////////////////////////////////
 
-[ServiceName="intelligence.ContextPublisher"]
-interface ContextPublisher {
-  // Obtains an attributed PublisherPipe from Context Service.
-  StartPublishing(string whoami, PublisherPipe& pipe);
+// Listener interface that a context publisher should implement to be informed
+// by Context Service that one or more subscribers has subscribed to its
+// context.
+interface ContextPublisherController {
+  // Indicates that one or more subscribers has subscribed to the context
+  // published by this context publisher. The link is closed when no subscribers
+  // are interested any longer.
+  StartPublishing(ContextPublisherLink link);
 };
 
-// An attributed sink that allows a data source to write to Context Service.
-interface PublisherPipe {
-  // Writes attributed context data to the specified label. To remove the
-  // context, write an empty JSON value.
-  Publish(string label, string json_value);
+// An attributed link that allows a context publisher to write to a context
+// label with a bound schema.
+interface ContextPublisherLink {
+  // Writes attributed context data to the bound label. To remove the context,
+  // write null. Invalid JSON, including the empty string, should not be passed.
+  // TODO(rosswang): Validate JSON or expand formats.
+  Update(string? json_value);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // Subscribe
 ////////////////////////////////////////////////////////////////////////////////
 
-[ServiceName="intelligence.ContextSubscriber"]
-interface ContextSubscriber {
-  // Registers a listener to a context label.
-  Subscribe(string label, ContextListener listener);
-  // TODO(thatguy) => (Subscription subcription);
-};
-
-interface ContextListener {
+// An attributed link that listens to updates to a context label with a bound
+// schema.
+interface ContextSubscriberLink {
   // Receives an update for a context label.
   OnUpdate(ContextUpdate update);
 };
@@ -43,8 +81,8 @@ struct ContextUpdate {
   string source;
   // TODO(thatguy): timestamp
 
-  // This may be an empty string, indicating that the value was deleted.
-  string json_value;
+  // This may be null, indicating that the value was deleted.
+  string? json_value;
 };
 
 // Eventually, Subscribe() will return this, and give you further control over
